@@ -25,19 +25,74 @@ class TodoService(
     private val userRepo: IUserRepository,
     private val todoRepo: ITodoRepository
 ) {
+    companion object {
+        private const val DEFAULT_PAGE = 1
+        private const val DEFAULT_PER_PAGE = 10
+        private const val MAX_PER_PAGE = 100
+    }
+
     // Mengambil semua daftar todo saya
     suspend fun getAll(call: ApplicationCall) {
         val user = ServiceHelper.getAuthUser(call, userRepo)
 
         val search = call.request.queryParameters["search"] ?: ""
+        val status = call.request.queryParameters["status"]?.lowercase() ?: "all"
+        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: DEFAULT_PAGE
+        val perPage = call.request.queryParameters["perPage"]?.toIntOrNull() ?: DEFAULT_PER_PAGE
 
-        val todos = todoRepo.getAll(user.id, search)
+        if (page < 1) {
+            throw AppException(400, "Nilai page harus lebih besar dari 0!")
+        }
+
+        if (perPage < 1 || perPage > MAX_PER_PAGE) {
+            throw AppException(400, "Nilai perPage harus berada pada rentang 1 sampai $MAX_PER_PAGE!")
+        }
+
+        val isDone = when (status) {
+            "all" -> null
+            "done" -> true
+            "undone", "pending" -> false
+            else -> throw AppException(400, "Filter status tidak valid! Gunakan all, done, pending, atau undone.")
+        }
+
+        val (todos, totalItems) = todoRepo.getAll(user.id, search, isDone, page, perPage)
+        val totalPages = if (totalItems == 0L) 0 else ((totalItems + perPage - 1) / perPage).toInt()
+        val hasNextPage = page < totalPages
 
         val response = DataResponse(
             "success",
             "Berhasil mengambil daftar todo saya",
-            mapOf(Pair("todos", todos))
+            mapOf(
+                Pair("todos", todos),
+                Pair("pagination", mapOf(
+                    Pair("page", page),
+                    Pair("perPage", perPage),
+                    Pair("totalItems", totalItems),
+                    Pair("totalPages", totalPages),
+                    Pair("hasNextPage", hasNextPage)
+                ))
+            )
         )
+        call.respond(response)
+    }
+
+    // Mengambil ringkasan todo saya untuk halaman Home
+    suspend fun getSummary(call: ApplicationCall) {
+        val user = ServiceHelper.getAuthUser(call, userRepo)
+        val (totalTodos, totalDoneTodos, totalUndoneTodos) = todoRepo.getSummary(user.id)
+
+        val response = DataResponse(
+            "success",
+            "Berhasil mengambil ringkasan todo saya",
+            mapOf(
+                Pair("summary", mapOf(
+                    Pair("totalTodos", totalTodos),
+                    Pair("totalDoneTodos", totalDoneTodos),
+                    Pair("totalUndoneTodos", totalUndoneTodos)
+                ))
+            )
+        )
+
         call.respond(response)
     }
 

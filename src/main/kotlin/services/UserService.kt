@@ -38,6 +38,7 @@ class UserService(
                     id = user.id,
                     name = user.name,
                     username = user.username,
+                    photo = user.photo,
                     createdAt = user.createdAt,
                     updatedAt = user.updatedAt,
                 ),

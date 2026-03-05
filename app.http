@@ -1,6 +1,6 @@
 ## Global Variabel
-#@BaseUrl = https://pam-2026-p5-ifs23-be.delcom.org:8080
-@BaseUrl = http://127.0.0.1:8000
+@BaseUrl = https://pam-2026-p5-ifs23002-be.delcom.org:8080
+#@BaseUrl = http://127.0.0.1:8000
 
 ### ---------------------------------------
 ## Auth
@@ -119,7 +119,13 @@ Content-Type: application/json
 
 ### Mengambil semua data todo user saat ini
 # @name GetTodos
-GET {{BaseUrl}}/todos?search=
+GET {{BaseUrl}}/todos?search=&status=all&page=1&perPage=10
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### Mengambil ringkasan todo untuk halaman Home
+# @name GetTodosSummary
+GET {{BaseUrl}}/todos/summary
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 

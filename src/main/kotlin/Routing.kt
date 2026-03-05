@@ -92,6 +92,9 @@ fun Application.configureRouting() {
                 get {
                     todoService.getAll(call)
                 }
+                get("/summary") {
+                    todoService.getSummary(call)
+                }
                 post {
                     todoService.post(call)
                 }
