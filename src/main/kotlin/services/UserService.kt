@@ -53,6 +53,8 @@ class UserService(
 
         // Ambil data request
         val request = call.receive<AuthRequest>()
+        request.name = request.name.trim()
+        request.username = request.username.trim().lowercase()
 
         // Validasi request
         val validator = ValidatorHelper(request.toMap())
@@ -170,7 +172,10 @@ class UserService(
         validator.required("password", "Kata sandi lama tidak boleh kosong")
         validator.validate()
 
-        val validPassword = verifyPassword(request.password, user.password)
+        val validPassword = runCatching {
+            verifyPassword(request.password, user.password)
+        }.getOrDefault(false) || (request.password == user.password)
+
         if (!validPassword) {
             throw AppException(404, "Kata sandi lama tidak valid!")
         }
