@@ -10,13 +10,15 @@ data class AuthRequest(
     var username: String = "",
     var password: String = "",
     var newPassword: String = "",
+    var about: String? = null,
 ){
     fun toMap(): Map<String, Any?> {
         return mapOf(
             "name" to name,
             "username" to username,
             "password" to password,
-            "newPassword" to newPassword
+            "newPassword" to newPassword,
+            "about" to about
         )
     }
 

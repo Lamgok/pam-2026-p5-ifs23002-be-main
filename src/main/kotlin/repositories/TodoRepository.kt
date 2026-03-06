@@ -7,57 +7,41 @@ import org.delcom.helpers.todoDAOToModel
 import org.delcom.tables.TodoTable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.lowerCase
-import org.jetbrains.exposed.sql.or
 import java.util.*
 
 class TodoRepository : ITodoRepository {
-    override suspend fun getAll(
-        userId: String,
-        search: String,
-        isDone: Boolean?,
-        page: Int,
-        perPage: Int
-    ): Pair<List<Todo>, Long> = suspendTransaction {
-        val userUUID = UUID.fromString(userId)
-        var filters = TodoTable.userId eq userUUID
-
-        if (search.isNotBlank()) {
+    override suspend fun getAll(userId: String, search: String, page: Int, perPage: Int, isComplete: Boolean?, urgency: Int?): List<Todo> = suspendTransaction {
+        val query = if (search.isBlank()) {
+            TodoDAO.find {
+                var op: org.jetbrains.exposed.sql.Op<Boolean> = (TodoTable.userId eq UUID.fromString(userId))
+                if (isComplete != null) op = op and (TodoTable.isDone eq isComplete)
+                if (urgency != null) op = op and (TodoTable.urgency eq urgency) // <--- FILTER URGENSI
+                op
+            }
+        } else {
             val keyword = "%${search.lowercase()}%"
-            filters = filters and (
-                (TodoTable.title.lowerCase() like keyword) or
-                    (TodoTable.description.lowerCase() like keyword)
-            )
+            TodoDAO.find {
+                var op: org.jetbrains.exposed.sql.Op<Boolean> = (TodoTable.userId eq UUID.fromString(userId)) and (TodoTable.title.lowerCase() like keyword)
+                if (isComplete != null) op = op and (TodoTable.isDone eq isComplete)
+                if (urgency != null) op = op and (TodoTable.urgency eq urgency) // <--- FILTER URGENSI
+                op
+            }
         }
 
-        if (isDone != null) {
-            filters = filters and (TodoTable.isDone eq isDone)
-        }
-
-        val query = TodoDAO.find { filters }
-        val totalItems = query.count()
-        val offset = ((page - 1) * perPage).toLong()
-        val todos = query
-            .orderBy(TodoTable.createdAt to SortOrder.DESC)
-            .limit(perPage)
-            .offset(offset)
-            .map(::todoDAOToModel)
-
-        Pair(todos, totalItems)
+        // Terapkan Pengurutan: Pertama berdasarkan Urgensi (High:3 -> Low:1), lalu Waktu Dibuat
+        query.orderBy(TodoTable.urgency to SortOrder.DESC, TodoTable.createdAt to SortOrder.DESC)
+            .limit(perPage).offset(((page - 1) * perPage).toLong()).map(::todoDAOToModel)
     }
 
-    override suspend fun getSummary(userId: String): Triple<Long, Long, Long> = suspendTransaction {
-        val userUUID = UUID.fromString(userId)
-        val totalTodos = TodoDAO.find { TodoTable.userId eq userUUID }.count()
-        val totalDoneTodos = TodoDAO.find {
-            (TodoTable.userId eq userUUID) and (TodoTable.isDone eq true)
-        }.count()
-        val totalUndoneTodos = totalTodos - totalDoneTodos
+    override suspend fun getHomeStats(userId: String): Map<String, Long> = suspendTransaction {
+        val total = TodoDAO.find { TodoTable.userId eq UUID.fromString(userId) }.count()
+        val completed = TodoDAO.find { (TodoTable.userId eq UUID.fromString(userId)) and (TodoTable.isDone eq true) }.count()
+        val active = total - completed
 
-        Triple(totalTodos, totalDoneTodos, totalUndoneTodos)
+        mapOf("total" to total, "complete" to completed, "active" to active)
     }
 
     override suspend fun getById(todoId: String): Todo? = suspendTransaction {
@@ -77,6 +61,7 @@ class TodoRepository : ITodoRepository {
             description = todo.description
             cover = todo.cover
             isDone = todo.isDone
+            urgency = todo.urgency
             createdAt = todo.createdAt
             updatedAt = todo.updatedAt
         }
@@ -98,6 +83,7 @@ class TodoRepository : ITodoRepository {
             todoDAO.description = newTodo.description
             todoDAO.cover = newTodo.cover
             todoDAO.isDone = newTodo.isDone
+            todoDAO.urgency = newTodo.urgency
             todoDAO.updatedAt = newTodo.updatedAt
             true
         } else {

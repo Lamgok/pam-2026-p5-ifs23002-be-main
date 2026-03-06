@@ -10,4 +10,5 @@ object UserTable : UUIDTable("users") {
     val photo = varchar("photo", 255).nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+    val about = text("about").nullable()
 }

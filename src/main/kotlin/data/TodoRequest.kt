@@ -12,6 +12,7 @@ data class TodoRequest(
     var description: String = "",
     var cover: String? = null,
     var isDone: Boolean = false,
+    var urgency: Int = 1,
 ){
     fun toMap(): Map<String, Any?> {
         return mapOf(
@@ -20,6 +21,7 @@ data class TodoRequest(
             "description" to description,
             "cover" to cover,
             "isDone" to isDone,
+            "urgency" to urgency,
         )
     }
 
@@ -30,6 +32,7 @@ data class TodoRequest(
             description = description,
             cover = cover,
             isDone = isDone,
+            urgency = urgency,
             updatedAt = Clock.System.now()
         )
     }

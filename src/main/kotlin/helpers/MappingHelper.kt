@@ -19,9 +19,10 @@ fun userDAOToModel(dao: UserDAO) = User(
     dao.username,
     dao.password,
     dao.photo,
+    dao.about,
     dao.createdAt,
     dao.updatedAt
-)
+).apply { about = dao.about }
 
 fun refreshTokenDAOToModel(dao: RefreshTokenDAO) = RefreshToken(
     dao.id.value.toString(),
@@ -40,5 +41,5 @@ fun todoDAOToModel(dao: TodoDAO) = Todo(
     cover = dao.cover,
     createdAt = dao.createdAt,
     updatedAt = dao.updatedAt
-)
+).apply { urgency = dao.urgency }
 

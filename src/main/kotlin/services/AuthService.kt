@@ -27,8 +27,6 @@ class AuthService(
     suspend fun postRegister(call: ApplicationCall) {
         // Ambil data request
         val request = call.receive<AuthRequest>()
-        request.name = request.name.trim()
-        request.username = request.username.trim().lowercase()
 
         // Validasi request
         val validator = ValidatorHelper(request.toMap())
@@ -61,7 +59,6 @@ class AuthService(
     suspend fun postLogin(call: ApplicationCall) {
         // Ambil data request
         val request = call.receive<AuthRequest>()
-        request.username = request.username.trim().lowercase()
 
         // Validasi request
         val validator = ValidatorHelper(request.toMap())
@@ -75,16 +72,7 @@ class AuthService(
             "Kredensial yang digunakan tidak valid!"
         )
 
-        var validPassword = runCatching {
-            verifyPassword(request.password, existUser.password)
-        }.getOrDefault(false)
-
-        if (!validPassword && existUser.password == request.password) {
-            existUser.password = hashPassword(request.password)
-            userRepository.update(existUser.id, existUser)
-            validPassword = true
-        }
-
+        val validPassword = verifyPassword(request.password, existUser.password)
         if (!validPassword) {
             throw AppException(404, "Kredensial yang digunakan tidak valid!")
         }

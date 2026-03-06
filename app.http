@@ -1,6 +1,6 @@
 ## Global Variabel
-@BaseUrl = https://pam-2026-p5-ifs23002-be.lamgok.fun:8080
-#@BaseUrl = http://127.0.0.1:8000
+#@BaseUrl = https://pam-2026-p5-ifs18005-be.delcom.org:8080
+@BaseUrl = https://pam-2026-p5-ifs23002-be.lamgok.fun:8080/
 
 ### ---------------------------------------
 ## Auth
@@ -12,7 +12,7 @@ POST {{BaseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "name": "",
+  "name": "Tester",
   "username": "tester",
   "password": "tester"
 }
@@ -119,13 +119,7 @@ Content-Type: application/json
 
 ### Mengambil semua data todo user saat ini
 # @name GetTodos
-GET {{BaseUrl}}/todos?search=&status=all&page=1&perPage=10
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-### Mengambil ringkasan todo untuk halaman Home
-# @name GetTodosSummary
-GET {{BaseUrl}}/todos/summary
+GET {{BaseUrl}}/todos?search=
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 

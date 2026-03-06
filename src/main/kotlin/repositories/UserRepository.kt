@@ -7,7 +7,6 @@ import org.delcom.helpers.userDAOToModel
 import org.delcom.tables.UserTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.lowerCase
 import java.util.*
 
 class UserRepository : IUserRepository {
@@ -21,7 +20,7 @@ class UserRepository : IUserRepository {
 
     override suspend fun getByUsername(username: String): User? = suspendTransaction {
         UserDAO
-            .find { UserTable.username.lowerCase() eq username.lowercase() }
+            .find { (UserTable.username eq username) }
             .limit(1)
             .map(::userDAOToModel)
             .firstOrNull()
@@ -33,6 +32,7 @@ class UserRepository : IUserRepository {
             username = user.username
             password = user.password
             createdAt = user.createdAt
+            about = user.about
             updatedAt = user.updatedAt
         }
 
@@ -50,6 +50,7 @@ class UserRepository : IUserRepository {
             userDAO.username = newUser.username
             userDAO.password = newUser.password
             userDAO.photo = newUser.photo
+            userDAO.about = newUser.about
             userDAO.updatedAt = newUser.updatedAt
             true
         } else {
